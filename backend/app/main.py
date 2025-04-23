@@ -31,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Include API routers
 app.include_router(startup_router, prefix="/api/v1", tags=["startups"])
 
 # Serve static files

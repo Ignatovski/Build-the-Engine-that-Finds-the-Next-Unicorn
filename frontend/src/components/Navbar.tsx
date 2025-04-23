@@ -6,13 +6,12 @@ import {
   Button,
   Box,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import BusinessIcon from '@mui/icons-material/Business';
-import AddIcon from '@mui/icons-material/Add';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SearchIcon from '@mui/icons-material/Search';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import HomeIcon from '@mui/icons-material/Home';
 
+/**
+ * Navigation bar component for the application
+ */
 export default function Navbar() {
   return (
     <AppBar position="static">
@@ -29,30 +28,14 @@ export default function Navbar() {
         >
           Startup Analysis Platform
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             color="inherit"
             component={RouterLink}
             to="/"
-            startIcon={<DashboardIcon />}
+            startIcon={<HomeIcon />}
           >
-            Dashboard
-          </Button>
-          <Button
-            color="inherit"
-            component={RouterLink}
-            to="/startups"
-            startIcon={<BusinessIcon />}
-          >
-            Startups
-          </Button>
-          <Button
-            color="inherit"
-            component={RouterLink}
-            to="/add-startup"
-            startIcon={<AddIcon />}
-          >
-            Add Startup
+            Home
           </Button>
           <Button
             color="inherit"
@@ -61,22 +44,6 @@ export default function Navbar() {
             startIcon={<AssessmentIcon />}
           >
             Analyze
-          </Button>
-          <Button
-            color="inherit"
-            component={RouterLink}
-            to="/unicorns"
-            startIcon={<TrendingUpIcon />}
-          >
-            Unicorns
-          </Button>
-          <Button
-            color="inherit"
-            component={RouterLink}
-            to="/search"
-            startIcon={<SearchIcon />}
-          >
-            Search
           </Button>
         </Box>
       </Toolbar>

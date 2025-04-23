@@ -17,12 +17,12 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 
 interface Startup {
-  id: number;
+  id?: number;
   name: string;
-  industry: string;
+  industry?: string;
   description: string;
-  valuation: number;
-  tech_stack: string[];
+  valuation?: string;
+  tech_stack?: string[];
 }
 
 const industries = [
@@ -44,6 +44,8 @@ export default function Search() {
   const [results, setResults] = useState<Startup[]>([]);
 
   const handleSearch = async () => {
+    if (!searchTerm.trim()) return;
+    
     try {
       const response = await fetch(
         `http://localhost:8000/api/v1/startups/search/ai?query=${encodeURIComponent(searchTerm)}${
@@ -53,27 +55,41 @@ export default function Search() {
       
       const data = await response.json();
       
-      // Parse the AI-generated results
-      if (data[0].synthetic) {
-        // Handle synthetic data
-        const syntheticResults = data[0].results
-          .split('\n\n')
-          .filter(Boolean)
-          .map((result: string) => ({
-            name: result.split('\n')[0],
-            description: result.split('\n').slice(1).join('\n')
-          }));
-        setResults(syntheticResults);
+      // Handle case where data isn't an array or is empty
+      if (!Array.isArray(data) || data.length === 0) {
+        console.error('Unexpected API response format:', data);
+        setResults([]);
+        return;
+      }
+      
+      // Handle real Tavily results
+      if (!data[0]?.synthetic && Array.isArray(data[0]?.results)) {
+        setResults(data[0].results.filter(item => 
+          item.title && item.url && item.snippet
+        ));
+      } else if (data[0]?.synthetic) {
+        // Fallback for synthetic data (should not happen in production)
+        setResults([]);
       } else {
         // Handle real data with AI suggestions
-        const aiResults = data[0].results
+        const aiResults = data[0]?.results
           .split('\n\n')
           .filter(Boolean)
-          .map((result: string) => {
+          .map((result: string, index: number) => {
             const lines = result.split('\n');
+            const name = lines[0].trim();
+            const description = lines.slice(1).join('\n');
+            
+            // Try to extract industry and tech stack from description
+            const industryMatch = description.match(/Industry:\s*([^.]+)/);
+            const techStackMatch = description.match(/Tech Stack:\s*([^.]+)/);
+            
             return {
-              name: lines[0],
-              description: lines.slice(1).join('\n')
+              id: index, // Generate an id for each result
+              name,
+              description,
+              industry: industryMatch ? industryMatch[1].trim() : undefined,
+              tech_stack: techStackMatch ? techStackMatch[1].split(',').map(t => t.trim()) : [],
             };
           });
         setResults(aiResults);
@@ -84,77 +100,80 @@ export default function Search() {
   };
 
   return (
-    <>
-      <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg">
+      <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>
         Search Startups
       </Typography>
-      
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} md={6}>
           <TextField
+            label="Search for startups"
+            variant="outlined"
             fullWidth
-            label="Search startups"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onChange={e => setSearchTerm(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleSearch();
+            }}
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <FormControl fullWidth>
             <InputLabel>Industry</InputLabel>
             <Select
               value={industry}
               label="Industry"
-              onChange={(e: SelectChangeEvent) => setIndustry(e.target.value)}
+              onChange={e => setIndustry(e.target.value)}
             >
-              {industries.map((ind) => (
+              {industries.map(ind => (
                 <MenuItem key={ind} value={ind}>{ind}</MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} md={2}>
+        <Grid item xs={12} md={3}>
           <Button
-            fullWidth
             variant="contained"
+            color="primary"
+            fullWidth
             onClick={handleSearch}
-            startIcon={<SearchIcon />}
-            sx={{ height: '56px' }}
+            sx={{ height: '100%' }}
           >
             Search
           </Button>
         </Grid>
       </Grid>
 
-      <Grid container spacing={3}>
-        {results.map((startup) => (
-          <Grid item xs={12} md={6} key={startup.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {startup.name}
-                </Typography>
-                <Typography color="text.secondary" gutterBottom>
-                  {startup.industry}
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  {startup.description}
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  {startup.tech_stack?.map((tech) => (
-                    <Chip
-                      key={tech}
-                      label={tech}
-                      size="small"
-                      sx={{ mr: 1, mb: 1 }}
-                    />
-                  ))}
-                </Box>
-              </CardContent>
-            </Card>
+      {/* Results */}
+      <Grid container spacing={2}>
+        {results.length === 0 ? (
+          <Grid item xs={12}>
+            <Typography variant="body2" color="text.secondary" align="center">
+              No results yet. Try searching for a company or keyword.
+            </Typography>
           </Grid>
-        ))}
+        ) : (
+          results.map((result: any, idx: number) => (
+            <Grid item xs={12} md={6} lg={4} key={idx}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    <a href={result.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      {result.title || 'Untitled'}
+                    </a>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    {result.snippet}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Source: {result.source || 'Unknown'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))
+        )}
       </Grid>
-    </>
+    </Container>
   );
 }

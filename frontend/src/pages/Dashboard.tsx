@@ -79,32 +79,42 @@ export default function Dashboard() {
         const response = await fetch('http://localhost:8000/api/v1/startups/');
         const data = await response.json();
         
+        // Check if data is an array and has at least one item
+        if (!Array.isArray(data) || data.length === 0) {
+          console.error('Unexpected API response format:', data);
+          setStartups([]);
+          setFilteredStartups([]);
+          return;
+        }
+
         // Parse the results from the synthetic data
-        const parsedStartups = data[0]?.results.split('\n\n')
-          .filter(Boolean)
-          .map((startupText: string) => {
-            const lines = startupText.split('\n');
-            const name = lines[0].trim();
-            const description = lines[1];
-            const industryMatch = description.match(/Industry: ([^.]+)/);
-            const techStackMatch = description.match(/Tech Stack: ([^.]+)/);
-            const valuationMatch = description.match(/Valuation: \$([0-9.]+)([BM])/);
-            
-            return {
-              name,
-              description,
-              industry: industryMatch ? industryMatch[1].trim() : 'Unknown',
-              tech_stack: techStackMatch ? techStackMatch[1].split(', ').map(t => t.trim()) : [],
-              valuation: valuationMatch ? `$${valuationMatch[1]}${valuationMatch[2]}` : 'Unknown',
-              scores: {
-                market: Math.random() * 40 + 60,
-                team: Math.random() * 40 + 60,
-                tech: Math.random() * 40 + 60,
-                traction: Math.random() * 40 + 60,
-                overall: Math.random() * 40 + 60,
-              }
-            };
-          });
+        const parsedStartups = data[0]?.results
+          ? data[0].results.split('\n\n')
+              .filter(Boolean)
+              .map((startupText: string) => {
+                const lines = startupText.split('\n');
+                const name = lines[0]?.trim() || 'Unknown Startup';
+                const description = lines[1] || '';
+                const industryMatch = description.match(/Industry: ([^.]+)/);
+                const techStackMatch = description.match(/Tech Stack: ([^.]+)/);
+                const valuationMatch = description.match(/Valuation: \$([0-9.]+)([BM])/);
+                
+                return {
+                  name,
+                  description,
+                  industry: industryMatch ? industryMatch[1].trim() : 'Unknown',
+                  tech_stack: techStackMatch ? techStackMatch[1].split(', ').map(t => t.trim()) : [],
+                  valuation: valuationMatch ? `$${valuationMatch[1]}${valuationMatch[2]}` : 'Unknown',
+                  scores: {
+                    market: Math.random() * 40 + 60,
+                    team: Math.random() * 40 + 60,
+                    tech: Math.random() * 40 + 60,
+                    traction: Math.random() * 40 + 60,
+                    overall: Math.random() * 40 + 60,
+                  }
+                };
+              })
+          : [];
         
         setStartups(parsedStartups);
         setFilteredStartups(parsedStartups);
@@ -127,7 +137,7 @@ export default function Dashboard() {
     
     if (filters.valuation !== 'All') {
       filtered = filtered.filter(s => {
-        const val = parseFloat(s.valuation.replace(/[^0-9.]/g, ''));
+        const val = parseFloat(s.valuation.replace(/[^0-9.]/g, '')) || 0;
         const unit = s.valuation.includes('B') ? 1000 : 1;
         const valInMillions = val * unit;
         
@@ -143,7 +153,7 @@ export default function Dashboard() {
     
     if (filters.techStack !== 'All') {
       filtered = filtered.filter(s => 
-        s.tech_stack.some(tech => tech.includes(filters.techStack))
+        s.tech_stack && s.tech_stack.some(tech => tech.includes(filters.techStack))
       );
     }
     
@@ -157,8 +167,24 @@ export default function Dashboard() {
 
   const getStats = () => {
     const total = filteredStartups.length;
+    
+    // Default values to avoid division by zero
+    if (total === 0) {
+      return {
+        total: 0,
+        avgValuation: 0,
+        avgScores: {
+          market: 0,
+          team: 0,
+          tech: 0,
+          traction: 0,
+          overall: 0,
+        }
+      };
+    }
+    
     const avgValuation = filteredStartups.reduce((acc, s) => {
-      const val = parseFloat(s.valuation.replace(/[^0-9.]/g, ''));
+      const val = parseFloat(s.valuation.replace(/[^0-9.]/g, '')) || 0;
       const unit = s.valuation.includes('B') ? 1000 : 1;
       return acc + (val * unit);
     }, 0) / total;
