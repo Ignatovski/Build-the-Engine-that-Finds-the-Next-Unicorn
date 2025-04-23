@@ -8,6 +8,10 @@ import {
 } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import HomeIcon from '@mui/icons-material/Home';
+import AddIcon from '@mui/icons-material/Add';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import StarIcon from '@mui/icons-material/Star';
+import SearchIcon from '@mui/icons-material/Search';
 
 /**
  * Navigation bar component for the application
@@ -40,10 +44,42 @@ export default function Navbar() {
           <Button
             color="inherit"
             component={RouterLink}
+            to="/startups"
+            startIcon={<ListAltIcon />}
+          >
+            Startups
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/add-startup"
+            startIcon={<AddIcon />}
+          >
+            Add Startup
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/unicorns"
+            startIcon={<StarIcon />}
+          >
+            Unicorns
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
             to="/analyze"
             startIcon={<AssessmentIcon />}
           >
             Analyze
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/search"
+            startIcon={<SearchIcon />}
+          >
+            Search
           </Button>
         </Box>
       </Toolbar>

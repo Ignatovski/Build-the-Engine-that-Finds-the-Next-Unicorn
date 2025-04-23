@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Container,
   FormControl,
+  LinearProgress,
   Grid,
   InputLabel,
   List,
@@ -30,6 +31,11 @@ import {
 } from '@mui/icons-material';
 
 interface AnalysisResult {
+  market_score: number;
+  team_score: number;
+  technology_score: number;
+  traction_score: number;
+  overall_score: number;
   success_probability: number;
   unicorn_probability: number;
   strengths: string[];
@@ -39,18 +45,18 @@ interface AnalysisResult {
 
 interface FormData {
   name: string;
-  description: string;
-  industry: string;
-  funding_stage: string;
+  description: string | null;
+  industry: string | null;
+  funding_stage: string | null;
 }
 
 export default function AnalyzeStartup() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    description: '',
-    industry: '',
-    funding_stage: '',
+    description: null,
+    industry: null,
+    funding_stage: null
   });
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +86,7 @@ export default function AnalyzeStartup() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value === '' ? null : value
     }));
     setError(null);
   };
@@ -97,26 +103,38 @@ export default function AnalyzeStartup() {
     setError(null);
 
     try {
-      const response = await fetch('/api/analyze-startup', {
+      console.log('Submitting data:', formData);
+      // Convert empty strings to null
+      const cleanedData = {
+        ...formData,
+        description: formData.description || null,
+        industry: formData.industry || null,
+        funding_stage: formData.funding_stage || null
+      };
+      console.log('Cleaned data:', cleanedData);
+      const response = await fetch('/api/v1/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(cleanedData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze startup');
+        const errorData = await response.json().catch(() => null);
+        console.error('Error response:', errorData);
+        throw new Error(errorData?.detail || 'Failed to analyze startup');
       }
 
       const data = await response.json();
       
       // Validate the response data before setting it
-      if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      if (!data || !data.analysis) {
         throw new Error('Invalid response data received from server');
       }
       
-      setResult(data as AnalysisResult);
+      // Extract the analysis part from the response
+      setResult(data.analysis as AnalysisResult);
     } catch (error) {
       console.error('Error:', error);
       setError(error instanceof Error ? error.message : 'An error occurred while analyzing the startup');
@@ -171,7 +189,7 @@ export default function AnalyzeStartup() {
                     <InputLabel>Industry</InputLabel>
                     <Select
                       name="industry"
-                      value={formData.industry}
+                      value={formData.industry || ''}
                       label="Industry"
                       onChange={handleInputChange}
                     >
@@ -186,7 +204,7 @@ export default function AnalyzeStartup() {
                     <InputLabel>Funding Stage</InputLabel>
                     <Select
                       name="funding_stage"
-                      value={formData.funding_stage}
+                      value={formData.funding_stage || ''}
                       label="Funding Stage"
                       onChange={handleInputChange}
                     >
@@ -228,14 +246,70 @@ export default function AnalyzeStartup() {
                   <Typography variant="h6" gutterBottom>
                     Analysis Results
                   </Typography>
+                  
+                  {/* Scores Grid */}
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2" color="text.secondary">Market Score</Typography>
+                      <LinearProgress
+                        variant="determinate"
+                        value={result.market_score * 10}
+                        color={result.market_score >= 7 ? 'success' : result.market_score >= 5 ? 'primary' : 'error'}
+                        sx={{ height: 8, borderRadius: 5 }}
+                      />
+                      <Typography variant="body2">{result.market_score}/10</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2" color="text.secondary">Team Score</Typography>
+                      <LinearProgress
+                        variant="determinate"
+                        value={result.team_score * 10}
+                        color={result.team_score >= 7 ? 'success' : result.team_score >= 5 ? 'primary' : 'error'}
+                        sx={{ height: 8, borderRadius: 5 }}
+                      />
+                      <Typography variant="body2">{result.team_score}/10</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2" color="text.secondary">Technology Score</Typography>
+                      <LinearProgress
+                        variant="determinate"
+                        value={result.technology_score * 10}
+                        color={result.technology_score >= 7 ? 'success' : result.technology_score >= 5 ? 'primary' : 'error'}
+                        sx={{ height: 8, borderRadius: 5 }}
+                      />
+                      <Typography variant="body2">{result.technology_score}/10</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2" color="text.secondary">Traction Score</Typography>
+                      <LinearProgress
+                        variant="determinate"
+                        value={result.traction_score * 10}
+                        color={result.traction_score >= 7 ? 'success' : result.traction_score >= 5 ? 'primary' : 'error'}
+                        sx={{ height: 8, borderRadius: 5 }}
+                      />
+                      <Typography variant="body2">{result.traction_score}/10</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2" color="text.secondary">Overall Score</Typography>
+                      <LinearProgress
+                        variant="determinate"
+                        value={result.overall_score * 10}
+                        color={result.overall_score >= 7 ? 'success' : result.overall_score >= 5 ? 'primary' : 'error'}
+                        sx={{ height: 8, borderRadius: 5 }}
+                      />
+                      <Typography variant="body2">{result.overall_score}/10</Typography>
+                    </Grid>
+                  </Grid>
+
+                  {/* Probability Circles */}
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Box sx={{ position: 'relative', display: 'inline-flex' }}>
                         <CircularProgress
                           variant="determinate"
-                          value={(result.success_probability || 0.75) * 100}
+                          value={result.success_probability * 100}
                           size={80}
-                          color={(result.success_probability || 0) >= 0.7 ? 'success' : 'primary'}
+                          color={result.success_probability >= 0.7 ? 'success' : 'primary'}
                         />
                         <Box
                           sx={{
@@ -250,7 +324,7 @@ export default function AnalyzeStartup() {
                           }}
                         >
                           <Typography variant="caption" component="div" color="text.secondary">
-                            {`${Math.round((result.success_probability || 0.75) * 100)}%`}
+                            {`${Math.round(result.success_probability * 100)}%`}
                           </Typography>
                         </Box>
                       </Box>
@@ -262,9 +336,9 @@ export default function AnalyzeStartup() {
                       <Box sx={{ position: 'relative', display: 'inline-flex' }}>
                         <CircularProgress
                           variant="determinate"
-                          value={(result.unicorn_probability || 0.6) * 100}
+                          value={result.unicorn_probability * 100}
                           size={80}
-                          color={(result.unicorn_probability || 0) >= 0.7 ? 'success' : 'primary'}
+                          color={result.unicorn_probability >= 0.7 ? 'success' : 'primary'}
                         />
                         <Box
                           sx={{
@@ -279,7 +353,7 @@ export default function AnalyzeStartup() {
                           }}
                         >
                           <Typography variant="caption" component="div" color="text.secondary">
-                            {`${Math.round((result.unicorn_probability || 0.6) * 100)}%`}
+                            {`${Math.round(result.unicorn_probability * 100)}%`}
                           </Typography>
                         </Box>
                       </Box>
