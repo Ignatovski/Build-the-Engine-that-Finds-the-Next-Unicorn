@@ -7,6 +7,7 @@ class StartupAnalysisRequest(BaseModel):
     description: Optional[str] = None
     industry: Optional[str] = None
     funding_stage: Optional[str] = None
+    website: Optional[str] = None
 
 class StartupCreate(BaseModel):
     """Model for creating a new startup"""

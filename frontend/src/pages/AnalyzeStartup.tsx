@@ -21,6 +21,7 @@ import {
   TextField,
   Typography,
   Alert,
+  Link,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -28,6 +29,7 @@ import {
   Lightbulb,
   CheckCircle,
   Upload,
+  Business,
 } from '@mui/icons-material';
 
 interface AnalysisResult {
@@ -38,6 +40,10 @@ interface AnalysisResult {
   overall_score: number;
   success_probability: number;
   unicorn_probability: number;
+  market_growth: number;  // Added for BCG Matrix
+  market_potential: number;  // Added for BCG Matrix
+  website_url: string | null;  // Added for website URL
+  logo_url: string | null;  // Added for company logo
   strengths: string[];
   risks: string[];
   recommendations: string[];
@@ -48,6 +54,8 @@ interface FormData {
   description: string | null;
   industry: string | null;
   funding_stage: string | null;
+  website: string;
+  file?: File | null;
 }
 
 export default function AnalyzeStartup() {
@@ -56,7 +64,9 @@ export default function AnalyzeStartup() {
     name: '',
     description: null,
     industry: null,
-    funding_stage: null
+    funding_stage: null,
+    website: '',
+    file: null,
   });
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,20 +114,30 @@ export default function AnalyzeStartup() {
 
     try {
       console.log('Submitting data:', formData);
-      // Convert empty strings to null
+      // Create FormData object for file upload
+      const formDataObj = new FormData();
+      
+      // Add file if present
+      if (formData.file) {
+        formDataObj.append('file', formData.file);
+      }
+      
+      // Add other form data
       const cleanedData = {
-        ...formData,
+        name: formData.name,
         description: formData.description || null,
         industry: formData.industry || null,
-        funding_stage: formData.funding_stage || null
+        funding_stage: formData.funding_stage || null,
+        website: formData.website || ''
       };
+      
+      // Add the JSON data
+      formDataObj.append('data', JSON.stringify(cleanedData));
+      
       console.log('Cleaned data:', cleanedData);
       const response = await fetch('/api/v1/analyze', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cleanedData),
+        body: formDataObj,
       });
 
       if (!response.ok) {
@@ -176,6 +196,16 @@ export default function AnalyzeStartup() {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
+                    label="Website URL"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
                     multiline
                     rows={4}
                     name="description"
@@ -183,6 +213,33 @@ export default function AnalyzeStartup() {
                     value={formData.description}
                     onChange={handleInputChange}
                   />
+                </Grid>
+                <Grid item xs={12}>
+                  <input
+                    accept=".pdf,.pptx"
+                    style={{ display: 'none' }}
+                    id="raised-button-file"
+                    type="file"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setFormData(prev => ({ ...prev, file }));
+                    }}
+                  />
+                  <label htmlFor="raised-button-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      startIcon={<Upload />}
+                      fullWidth
+                    >
+                      Upload Company Documents (PDF/PPTX)
+                    </Button>
+                  </label>
+                  {formData.file && (
+                    <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                      Selected file: {formData.file.name}
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
@@ -241,11 +298,88 @@ export default function AnalyzeStartup() {
             </Box>
           ) : result ? (
             <Stack spacing={2}>
+              {/* Analysis Results Card */}
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Analysis Results
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    {result.logo_url ? (
+                      <Box
+                        component="img"
+                        src={result.logo_url}
+                        alt="Company Logo"
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          objectFit: 'contain',
+                          borderRadius: 1,
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          p: 1,
+                          mr: 2
+                        }}
+                        onError={(e) => {
+                          // Hide image on error
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: 1,
+                          bgcolor: 'grey.100',
+                          mr: 2
+                        }}
+                      >
+                        <Business sx={{ fontSize: 30, color: 'grey.400' }} />
+                      </Box>
+                    )}
+                    <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+                      Analysis Results
+                    </Typography>
+                  </Box>
+                  
+                  {/* Website URL */}
+                  {result.website_url !== undefined && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1" gutterBottom display="flex" alignItems="center">
+                        Website:
+                        {result.website_url ? (
+                          <Link
+                            href={result.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              ml: 1,
+                              color: 'primary.main',
+                              textDecoration: 'none',
+                              '&:hover': {
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            {result.website_url}
+                          </Link>
+                        ) : (
+                          <Typography
+                            component="span"
+                            sx={{
+                              ml: 1,
+                              color: 'text.secondary',
+                              fontStyle: 'italic'
+                            }}
+                          >
+                            Not available
+                          </Typography>
+                        )}
+                      </Typography>
+                    </Box>
+                  )}
                   
                   {/* Scores Grid */}
                   <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -410,6 +544,217 @@ export default function AnalyzeStartup() {
                       </ListItem>
                     ))}
                   </List>
+                </CardContent>
+              </Card>
+
+              {/* BCG Matrix */}
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    {result.logo_url && (
+                      <Box
+                        component="img"
+                        src={result.logo_url}
+                        alt="Company Logo"
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          objectFit: 'contain',
+                          borderRadius: 1,
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          p: 1
+                        }}
+                        onError={(e) => {
+                          // Hide image on error
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+                      Analysis Results
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 400,
+                      position: 'relative',
+                      border: '1px solid #ccc',
+                      borderRadius: 1,
+                      p: 2,
+                      backgroundColor: '#f5f5f5'
+                    }}
+                  >
+                    {/* Quadrant Labels */}
+                    <Typography
+                      sx={{
+                        position: 'absolute',
+                        top: '10%',
+                        right: '25%',
+                        fontWeight: 'bold',
+                        color: 'success.main'
+                      }}
+                    >
+                      Stars
+                    </Typography>
+                    <Typography
+                      sx={{
+                        position: 'absolute',
+                        top: '10%',
+                        left: '25%',
+                        fontWeight: 'bold',
+                        color: 'warning.main'
+                      }}
+                    >
+                      Question Marks
+                    </Typography>
+                    <Typography
+                      sx={{
+                        position: 'absolute',
+                        bottom: '10%',
+                        right: '25%',
+                        fontWeight: 'bold',
+                        color: 'info.main'
+                      }}
+                    >
+                      Cash Cows
+                    </Typography>
+                    <Typography
+                      sx={{
+                        position: 'absolute',
+                        bottom: '10%',
+                        left: '25%',
+                        fontWeight: 'bold',
+                        color: 'error.main'
+                      }}
+                    >
+                      Dogs
+                    </Typography>
+
+                    {/* Axes */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: 0,
+                        bottom: 0,
+                        borderLeft: '1px dashed #ccc'
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: 0,
+                        right: 0,
+                        borderTop: '1px dashed #ccc'
+                      }}
+                    />
+
+                    {/* Company Position */}
+                    {/* Company Position */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: `${Math.min(Math.max((result.market_potential || 0.5) * 100, 5), 95)}%`,
+                        bottom: `${Math.min(Math.max((result.market_growth || 0.5) * 100, 5), 95)}%`,
+                        transform: 'translate(-50%, 50%)',
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        bgcolor: 'primary.main',
+                        boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+                        border: '2px solid white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        zIndex: 2,
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          transform: 'translate(-50%, 50%) scale(1.1)',
+                          boxShadow: '0 0 15px rgba(0,0,0,0.4)',
+                        }
+                      }}
+                    >
+                      {formData.name?.[0]?.toUpperCase() || '?'}
+                    </Box>
+
+                    {/* Quadrant Backgrounds with Gradients */}
+                    <Box sx={{
+                      position: 'absolute',
+                      right: 0,
+                      top: 0,
+                      width: '50%',
+                      height: '50%',
+                      background: 'linear-gradient(135deg, rgba(76,175,80,0.15) 0%, rgba(76,175,80,0.05) 100%)',
+                      borderTop: '1px solid rgba(76,175,80,0.2)',
+                      borderRight: '1px solid rgba(76,175,80,0.2)'
+                    }} />
+                    <Box sx={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      width: '50%',
+                      height: '50%',
+                      background: 'linear-gradient(135deg, rgba(255,152,0,0.15) 0%, rgba(255,152,0,0.05) 100%)',
+                      borderTop: '1px solid rgba(255,152,0,0.2)',
+                      borderLeft: '1px solid rgba(255,152,0,0.2)'
+                    }} />
+                    <Box sx={{
+                      position: 'absolute',
+                      right: 0,
+                      bottom: 0,
+                      width: '50%',
+                      height: '50%',
+                      background: 'linear-gradient(135deg, rgba(33,150,243,0.15) 0%, rgba(33,150,243,0.05) 100%)',
+                      borderBottom: '1px solid rgba(33,150,243,0.2)',
+                      borderRight: '1px solid rgba(33,150,243,0.2)'
+                    }} />
+                    <Box sx={{
+                      position: 'absolute',
+                      left: 0,
+                      bottom: 0,
+                      width: '50%',
+                      height: '50%',
+                      background: 'linear-gradient(135deg, rgba(244,67,54,0.15) 0%, rgba(244,67,54,0.05) 100%)',
+                      borderBottom: '1px solid rgba(244,67,54,0.2)',
+                      borderLeft: '1px solid rgba(244,67,54,0.2)'
+                    }} />
+
+                    {/* Axis Labels */}
+                    <Typography
+                      sx={{
+                        position: 'absolute',
+                        bottom: -30,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        textAlign: 'center',
+                        fontSize: '0.875rem',
+                        color: 'text.secondary'
+                      }}
+                    >
+                      Market Potential
+                    </Typography>
+                    <Typography
+                      sx={{
+                        position: 'absolute',
+                        left: -40,
+                        top: '50%',
+                        transform: 'translateY(-50%) rotate(-90deg)',
+                        textAlign: 'center',
+                        fontSize: '0.875rem',
+                        color: 'text.secondary'
+                      }}
+                    >
+                      Market Growth
+                    </Typography>
+                  </Box>
                 </CardContent>
               </Card>
             </Stack>

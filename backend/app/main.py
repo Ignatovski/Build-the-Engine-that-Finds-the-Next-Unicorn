@@ -12,6 +12,12 @@ from app.api.startups import router as startup_router
 # Load environment variables
 load_dotenv()
 
+# Debug prints for environment variables
+print("[DEBUG] Environment variables:")
+print("TAVILY_API_KEY:", os.getenv("TAVILY_API_KEY"))
+print("OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))
+print("Current working directory:", os.getcwd())
+
 # Get the absolute path to the static directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_DIR = os.path.join(BASE_DIR, "app", "static")
