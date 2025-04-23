@@ -1,0 +1,49 @@
+import { Link as RouterLink } from 'react-router-dom';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+} from '@mui/material';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import BusinessIcon from '@mui/icons-material/Business';
+
+export default function Navbar() {
+  return (
+    <AppBar position="static">
+      <Toolbar>
+        <Typography
+          variant="h6"
+          component={RouterLink}
+          to="/"
+          sx={{
+            flexGrow: 1,
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
+        >
+          Startup Analysis Platform
+        </Typography>
+        <Box>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/"
+            startIcon={<DashboardIcon />}
+          >
+            Dashboard
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/startups"
+            startIcon={<BusinessIcon />}
+          >
+            Startups
+          </Button>
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
+}
