@@ -8,6 +8,9 @@ import {
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import BusinessIcon from '@mui/icons-material/Business';
+import AddIcon from '@mui/icons-material/Add';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import SearchIcon from '@mui/icons-material/Search';
 
 export default function Navbar() {
   return (
@@ -25,7 +28,7 @@ export default function Navbar() {
         >
           Startup Analysis Platform
         </Typography>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             color="inherit"
             component={RouterLink}
@@ -41,6 +44,30 @@ export default function Navbar() {
             startIcon={<BusinessIcon />}
           >
             Startups
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/add-startup"
+            startIcon={<AddIcon />}
+          >
+            Add Startup
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/unicorns"
+            startIcon={<TrendingUpIcon />}
+          >
+            Unicorns
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/search"
+            startIcon={<SearchIcon />}
+          >
+            Search
           </Button>
         </Box>
       </Toolbar>

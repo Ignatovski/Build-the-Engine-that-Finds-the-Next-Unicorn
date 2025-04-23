@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import StartupList from './pages/StartupList';
 import StartupDetails from './pages/StartupDetails';
 import AddStartup from './pages/AddStartup';
+import Unicorns from './pages/Unicorns';
+import Search from './pages/Search';
 
 // Components
 import Navbar from './components/Navbar';
@@ -36,6 +38,8 @@ function App() {
             <Route path="/startups" element={<StartupList />} />
             <Route path="/startups/:id" element={<StartupDetails />} />
             <Route path="/add-startup" element={<AddStartup />} />
+            <Route path="/unicorns" element={<Unicorns />} />
+            <Route path="/search" element={<Search />} />
           </Routes>
         </Container>
       </Router>

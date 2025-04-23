@@ -18,7 +18,25 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    // TODO: Fetch dashboard stats from API
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/startups/');
+        const startups = await response.json();
+        
+        // Calculate stats
+        const stats = {
+          totalStartups: startups.length,
+          averageScore: startups.reduce((acc: number, s: any) => acc + (s.analysis?.score || 0), 0) / startups.length || 0,
+          topIndustries: Array.from(new Set(startups.map((s: any) => s.industry))).slice(0, 3)
+        };
+        
+        setStats(stats);
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+    
+    fetchStats();
   }, []);
 
   return (
