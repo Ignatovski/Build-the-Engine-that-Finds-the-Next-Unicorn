@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -10,6 +11,7 @@ import StartupDetails from './pages/StartupDetails';
 import AddStartup from './pages/AddStartup';
 import Unicorns from './pages/Unicorns';
 import Search from './pages/Search';
+import AnalyzeStartup from './pages/AnalyzeStartup';
 
 // Components
 import Navbar from './components/Navbar';
@@ -39,6 +41,7 @@ function App() {
             <Route path="/startups/:id" element={<StartupDetails />} />
             <Route path="/add-startup" element={<AddStartup />} />
             <Route path="/unicorns" element={<Unicorns />} />
+            <Route path="/analyze" element={<AnalyzeStartup />} />
             <Route path="/search" element={<Search />} />
           </Routes>
         </Container>

@@ -11,6 +11,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import AddIcon from '@mui/icons-material/Add';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SearchIcon from '@mui/icons-material/Search';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 export default function Navbar() {
   return (
@@ -52,6 +53,14 @@ export default function Navbar() {
             startIcon={<AddIcon />}
           >
             Add Startup
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/analyze"
+            startIcon={<AssessmentIcon />}
+          >
+            Analyze
           </Button>
           <Button
             color="inherit"
