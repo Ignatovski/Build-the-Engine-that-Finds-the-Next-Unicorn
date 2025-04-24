@@ -80,9 +80,10 @@ const fetchCompanyLogo = async (companyName: string, websiteUrl?: string) => {
   // 1. Try Clearbit if we have a website
   if (websiteUrl) {
     try {
-      const domain = new URL(websiteUrl).hostname;
+      const domain = new URL(websiteUrl).hostname.replace('www.', '');
       sources.push(`https://logo.clearbit.com/${domain}?size=400`);
       sources.push(`https://favicongrabber.com/api/grab/${domain}?size=128`);
+      sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${websiteUrl}&size=256`);
     } catch {}
   }
   
@@ -90,14 +91,20 @@ const fetchCompanyLogo = async (companyName: string, websiteUrl?: string) => {
   sources.push(
     `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(companyName)}`
   );
+  sources.push(
+    `https://company.clearbit.com/v2/companies/find?name=${encodeURIComponent(companyName)}`
+  );
   
   // 3. Try each source until we find a valid logo
   for (const source of sources) {
     try {
-      if (source.includes('autocomplete')) {
-        // Handle API endpoint
+      if (source.includes('autocomplete') || source.includes('find')) {
+        // Handle API endpoints
         const response = await fetch(source);
         const data = await response.json();
+        if (source.includes('find') && data?.logo) {
+          return data.logo;
+        }
         if (data?.[0]?.logo) {
           return data[0].logo;
         }
@@ -271,6 +278,26 @@ export default function AnalyzeStartup() {
     
     loadLogo();
   }, [result, formData.name]);
+
+  // Temporary test function - remove after testing
+  const testLogoFetch = async () => {
+    console.log('Testing logo fetch for Google...');
+    try {
+      const googleLogo = await fetchCompanyLogo('Google', 'https://google.com');
+      console.log('Google logo URL:', googleLogo);
+      
+      // Also test with just name
+      const nameOnlyLogo = await fetchCompanyLogo('Google');
+      console.log('Name-only logo URL:', nameOnlyLogo);
+    } catch (error) {
+      console.error('Logo test failed:', error);
+    }
+  };
+
+  // Call test on component mount
+  useEffect(() => {
+    testLogoFetch();
+  }, []);
 
   return (
     <Box
