@@ -8,6 +8,7 @@ import os
 
 # Import routers
 from app.api.startups import router as startup_router
+from app.api.news import router as news_router
 
 # Load environment variables
 load_dotenv()
@@ -39,6 +40,7 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(startup_router, prefix="/api/v1", tags=["startups"])
+app.include_router(news_router, prefix="/api/v1", tags=["news"])
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

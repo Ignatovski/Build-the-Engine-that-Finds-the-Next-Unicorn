@@ -5,12 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Container } from '@mui/material';
 
 // Pages
-import Dashboard from './pages/Dashboard';
-import StartupList from './pages/StartupList';
-import StartupDetails from './pages/StartupDetails';
-import AddStartup from './pages/AddStartup';
-import Unicorns from './pages/Unicorns';
-import Search from './pages/Search';
+import Home from './pages/Home';
 import AnalyzeStartup from './pages/AnalyzeStartup';
 
 // Components
@@ -36,13 +31,8 @@ function App() {
         <Navbar />
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/startups" element={<StartupList />} />
-            <Route path="/startups/:id" element={<StartupDetails />} />
-            <Route path="/add-startup" element={<AddStartup />} />
-            <Route path="/unicorns" element={<Unicorns />} />
+            <Route path="/" element={<Home />} />
             <Route path="/analyze" element={<AnalyzeStartup />} />
-            <Route path="/search" element={<Search />} />
           </Routes>
         </Container>
       </Router>
