@@ -75,7 +75,7 @@ export default function Search() {
 
       // Handle Tavily results
       if (!data[0]?.synthetic && Array.isArray(data[0]?.results)) {
-        const validResults = data[0].results.filter((item): item is SearchResult => 
+        const validResults = data[0].results.filter((item: SearchResult): item is SearchResult => 
           Boolean(item.title && item.url && item.snippet && item.source)
         );
 
