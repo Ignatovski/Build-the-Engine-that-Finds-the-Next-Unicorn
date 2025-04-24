@@ -40,7 +40,7 @@ export default function Home() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/v1/startup-news?page=1&page_size=4');
+        const response = await fetch('/api/v1/startup-news?page=1&page_size=6');
         if (!response.ok) {
           throw new Error('Failed to fetch news');
         }
