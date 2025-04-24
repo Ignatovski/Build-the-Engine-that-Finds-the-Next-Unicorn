@@ -49,12 +49,8 @@ async def get_startup_news(
                             if delta.days > 0:
                                 article["timeAgo"] = f"{delta.days}d ago"
                             else:
-                                hours = delta.seconds // 3600
-                                if hours > 0:
-                                    article["timeAgo"] = f"{hours}h ago"
-                                else:
-                                    minutes = (delta.seconds % 3600) // 60
-                                    article["timeAgo"] = f"{minutes}m ago"
+                                article["timeAgo"] = "Today"
+                        article["imageUrl"] = article.get("urlToImage", "")
                     
                     return {
                         "articles": articles,

@@ -20,6 +20,7 @@ interface Article {
   title: string;
   description: string;
   url: string;
+  imageUrl?: string;
   source: {
     name: string;
   };
@@ -99,99 +100,126 @@ export default function Home() {
           mx: 'auto', 
           mb: 6,
           borderRadius: '12px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+          backdropFilter: 'blur(16px)',
+          background: theme.palette.mode === 'dark'
+            ? 'rgba(32, 10, 10, 0.7)'
+            : 'rgba(255, 235, 235, 0.7)'
         }}>
           {error}
         </Alert>
-      ) : news && (
-        <Grid container spacing={4} justifyContent="center">
+      ) : news?.articles ? (
+        <Grid container spacing={4}>
           {news.articles.map((article, index) => (
-            <Grid item xs={12} md={6} lg={4} key={index}>
+            <Grid item xs={12} sm={6} md={4} key={index}>
               <Card sx={{
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                borderRadius: '16px',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: theme.shadows[10]
+                },
+                backdropFilter: 'blur(16px)',
                 background: theme.palette.mode === 'dark'
                   ? 'rgba(30, 30, 30, 0.7)'
-                  : 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(8px)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
-                }
+                  : 'rgba(255, 255, 255, 0.7)',
+                border: theme.palette.mode === 'dark'
+                  ? '1px solid rgba(255, 255, 255, 0.1)'
+                  : '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '16px',
+                overflow: 'hidden'
               }}>
-                <CardContent sx={{ 
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2
-                }}>
+                <Box 
+                  sx={{
+                    height: 160,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    backgroundColor: theme.palette.mode === 'dark' 
+                      ? 'rgba(50,50,50,0.5)' 
+                      : 'rgba(240,240,240,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    '&:hover img': {
+                      transform: 'scale(1.05)'
+                    }
+                  }}
+                >
+                  <img
+                    src={article.imageUrl || `https://source.unsplash.com/random/600x400/?startup,tech,${index}`}
+                    alt={article.title}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      transition: 'transform 0.5s ease',
+                      display: article.imageUrl ? 'block' : 'none'
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
                   <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
+                    width: 60, 
+                    height: 60,
+                    color: theme.palette.text.secondary,
+                    display: article.imageUrl ? 'none' : 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </Box>
+                </Box>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
+                    {article.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 2 }}>
+                    {article.description}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 'auto' }}>
                     <Chip 
-                      label={article.source.name}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ borderRadius: '6px' }}
+                      label={article.source.name} 
+                      size="small" 
+                      sx={{ 
+                        mr: 1,
+                        fontWeight: 500,
+                        background: theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.1)'
+                          : 'rgba(0, 0, 0, 0.05)'
+                      }}
                     />
                     <Typography variant="caption" color="text.secondary">
                       {article.timeAgo}
                     </Typography>
                   </Box>
-                  
-                  <Link
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    underline="none"
-                    color="inherit"
-                  >
-                    <Typography variant="h6" sx={{ 
-                      fontWeight: 600,
-                      lineHeight: 1.3,
-                      mb: 1
-                    }}>
-                      {article.title}
-                    </Typography>
-                  </Link>
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ 
-                    flex: 1,
-                    mb: 2
-                  }}>
-                    {article.description}
-                  </Typography>
-                  
+                </CardContent>
+                <Box sx={{ p: 2, pt: 0 }}>
                   <Button 
-                    variant="outlined" 
+                    href={article.url} 
+                    target="_blank" 
+                    rel="noopener"
                     size="small"
-                    endIcon={<OpenInNew fontSize="small" />}
-                    component="a"
-                    href={article.url}
-                    target="_blank"
+                    endIcon={<OpenInNew />}
                     sx={{
-                      alignSelf: 'flex-start',
-                      borderRadius: '8px',
-                      px: 2,
-                      py: 1
+                      fontWeight: 500,
+                      color: theme.palette.primary.main,
+                      '&:hover': {
+                        color: theme.palette.primary.dark
+                      }
                     }}
                   >
-                    Read More
+                    Read Article
                   </Button>
-                </CardContent>
+                </Box>
               </Card>
             </Grid>
           ))}
         </Grid>
-      )}
+      ) : null}
     </Container>
   );
 }
