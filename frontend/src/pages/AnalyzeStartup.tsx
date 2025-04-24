@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -74,18 +74,78 @@ const isWikipediaUrl = (urlString: string) => {
   }
 };
 
+const fetchCompanyLogo = async (companyName: string, websiteUrl?: string) => {
+  const sources = [];
+  
+  // 1. Try Clearbit if we have a website
+  if (websiteUrl) {
+    try {
+      const domain = new URL(websiteUrl).hostname;
+      sources.push(`https://logo.clearbit.com/${domain}?size=400`);
+      sources.push(`https://favicongrabber.com/api/grab/${domain}?size=128`);
+    } catch {}
+  }
+  
+  // 2. Add alternative logo APIs
+  sources.push(
+    `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(companyName)}`
+  );
+  
+  // 3. Try each source until we find a valid logo
+  for (const source of sources) {
+    try {
+      if (source.includes('autocomplete')) {
+        // Handle API endpoint
+        const response = await fetch(source);
+        const data = await response.json();
+        if (data?.[0]?.logo) {
+          return data[0].logo;
+        }
+      } else {
+        // Handle direct image URLs
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = source;
+        });
+        return source;
+      }
+    } catch {}
+  }
+  
+  // Final fallback
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=random&color=fff&size=400`;
+};
+
+const testImage = async (url: string) => {
+  try {
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export default function AnalyzeStartup() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    description: null,
-    industry: null,
-    funding_stage: null,
+    description: '',
+    industry: '',
+    funding_stage: '',
     website: '',
     file: null,
   });
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [logoLoading, setLogoLoading] = useState(false);
 
   const industries = [
     'AI/ML',
@@ -180,48 +240,37 @@ export default function AnalyzeStartup() {
 
   const startupName = formData.name;
 
-  const getCompanyLogo = () => {
-    try {
-      // Check if we have direct logo URLs first
-      if (result?.logo_urls?.[0]) {
-        return result.logo_urls[0];
+  useEffect(() => {
+    const loadLogo = async () => {
+      if (!result) return;
+      
+      setLogoLoading(true);
+      console.debug('Logo fetch inputs - name:', formData.name, 'website:', result.website_url);
+      console.debug('Fetching logo for:', formData.name);
+      
+      try {
+        // Try primary sources
+        let logo = await fetchCompanyLogo(formData.name ?? undefined, result.website_url ?? undefined);
+        
+        // Fallback to favicon if needed
+        if (logo.includes('ui-avatars') && result.website_url) {
+          const domain = new URL(result.website_url).hostname;
+          const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
+          if (await testImage(faviconUrl)) logo = faviconUrl;
+        }
+        
+        setLogoUrl(logo);
+        
+      } catch (error) {
+        console.error('Logo fetch failed:', error);
+        setLogoUrl(`https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=400`);
+      } finally {
+        setLogoLoading(false);
       }
-      
-      // Check if we have a valid website URL
-      if (!result?.website_url) {
-        throw new Error('No website URL');
-      }
-      
-      // Parse URL and verify it's not from excluded domains
-      const url = new URL(result.website_url);
-      const excludedDomains = [
-        '.wikipedia.org', // Catches all subdomains like en.wikipedia.org
-        'wikipedia.com', 
-        'wiki',
-        'linkedin.com', 
-        'crunchbase.com', 
-        'glassdoor.com', 
-        'indeed.com'
-      ];
-      
-      const isWikipedia = url.hostname.endsWith('.wikipedia.org');
-      const isExcluded = excludedDomains.some(domain => 
-        url.hostname.toLowerCase().includes(domain.toLowerCase())
-      );
-      
-      const isOriginalDomain = !isWikipedia && !isExcluded;
-      
-      // For original domains, try Clearbit
-      if (isOriginalDomain) {
-        return `https://logo.clearbit.com/${url.hostname}?size=120`;
-      }
-    } catch (e) {
-      // Fall through to generated avatar
-    }
+    };
     
-    // Final fallback to generated avatar
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`;
-  };
+    loadLogo();
+  }, [result, formData.name]);
 
   return (
     <Box
@@ -441,19 +490,24 @@ export default function AnalyzeStartup() {
                               ? 'rgba(255,255,255,0.1)' 
                               : 'rgba(0,0,0,0.05)'
                           }}>
-                            <img 
-                              src={getCompanyLogo()}
-                              alt="Company logo" 
-                              style={{ 
-                                width: '100%', 
-                                height: '100%', 
-                                objectFit: 'cover'
-                              }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 
-                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`;
-                              }}
-                            />
+                            {logoLoading ? (
+                              <CircularProgress size={24} />
+                            ) : (
+                              <img 
+                                src={logoUrl}
+                                alt="Company logo" 
+                                style={{ 
+                                  width: '100%', 
+                                  height: '100%', 
+                                  objectFit: 'cover'
+                                }}
+                                onError={() => {
+                                  setLogoUrl(
+                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`
+                                  );
+                                }}
+                              />
+                            )}
                           </Box>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Typography variant="h5" noWrap sx={{ mb: 1, fontWeight: 600 }}>
@@ -803,19 +857,24 @@ export default function AnalyzeStartup() {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <img 
-                  src={getCompanyLogo()}
-                  alt="Company logo" 
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover'
-                  }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`;
-                  }}
-                />
+                {logoLoading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  <img 
+                    src={logoUrl}
+                    alt="Company logo" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover'
+                    }}
+                    onError={() => {
+                      setLogoUrl(
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`
+                      );
+                    }}
+                  />
+                )}
               </Box>
               
               {/* Company Info */}

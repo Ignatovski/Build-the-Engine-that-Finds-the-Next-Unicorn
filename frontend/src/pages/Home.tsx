@@ -167,6 +167,26 @@ export default function Home() {
                   )}
                 </Box>
                 <Box sx={{ p: 2, pt: 0 }}>
+                  <Typography variant="h6" component="h3" gutterBottom>
+                    {article.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {article.description}
+                  </Typography>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <Chip 
+                      label={article.source.name} 
+                      size="small" 
+                      variant="outlined"
+                    />
+                    <Typography variant="caption" color="text.disabled">
+                      {article.timeAgo}
+                    </Typography>
+                  </Box>
                   <Button 
                     href={article.url} 
                     target="_blank" 
@@ -174,6 +194,7 @@ export default function Home() {
                     size="small"
                     endIcon={<OpenInNew />}
                     sx={{
+                      mt: 2,
                       fontWeight: 500,
                       color: theme.palette.primary.main,
                       '&:hover': {
