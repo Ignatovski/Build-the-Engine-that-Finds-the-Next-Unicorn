@@ -63,6 +63,17 @@ interface FormData {
   file?: File | null;
 }
 
+const isWikipediaUrl = (urlString: string) => {
+  try {
+    const url = new URL(urlString);
+    return url.hostname.endsWith('.wikipedia.org') || 
+           url.hostname.includes('wikipedia.com') ||
+           url.hostname.includes('wiki');
+  } catch {
+    return false;
+  }
+};
+
 export default function AnalyzeStartup() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -168,6 +179,49 @@ export default function AnalyzeStartup() {
   };
 
   const startupName = formData.name;
+
+  const getCompanyLogo = () => {
+    try {
+      // Check if we have direct logo URLs first
+      if (result?.logo_urls?.[0]) {
+        return result.logo_urls[0];
+      }
+      
+      // Check if we have a valid website URL
+      if (!result?.website_url) {
+        throw new Error('No website URL');
+      }
+      
+      // Parse URL and verify it's not from excluded domains
+      const url = new URL(result.website_url);
+      const excludedDomains = [
+        '.wikipedia.org', // Catches all subdomains like en.wikipedia.org
+        'wikipedia.com', 
+        'wiki',
+        'linkedin.com', 
+        'crunchbase.com', 
+        'glassdoor.com', 
+        'indeed.com'
+      ];
+      
+      const isWikipedia = url.hostname.endsWith('.wikipedia.org');
+      const isExcluded = excludedDomains.some(domain => 
+        url.hostname.toLowerCase().includes(domain.toLowerCase())
+      );
+      
+      const isOriginalDomain = !isWikipedia && !isExcluded;
+      
+      // For original domains, try Clearbit
+      if (isOriginalDomain) {
+        return `https://logo.clearbit.com/${url.hostname}?size=120`;
+      }
+    } catch (e) {
+      // Fall through to generated avatar
+    }
+    
+    // Final fallback to generated avatar
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`;
+  };
 
   return (
     <Box
@@ -387,71 +441,39 @@ export default function AnalyzeStartup() {
                               ? 'rgba(255,255,255,0.1)' 
                               : 'rgba(0,0,0,0.05)'
                           }}>
-                            {result.logo_urls?.[0] ? (
-                              <img 
-                                src={result.logo_urls[0]}
-                                alt="Company logo" 
-                                style={{ 
-                                  width: '100%', 
-                                  height: '100%', 
-                                  objectFit: 'contain'
-                                }}
-                                onError={(e) => {
-                                  const fallbackSrc = result.website_url && !['wikipedia', 'linkedin', 'crunchbase', 'glassdoor', 'indeed'].some(site => result.website_url.includes(site))
-                                    ? `https://logo.clearbit.com/${new URL(result.website_url).hostname}?size=72`
-                                    : `https://ui-avatars.com/api/?name=${formData.name.replace(/\s+/g, '+')}&background=random&color=fff&size=72`;
-                                  (e.target as HTMLImageElement).src = fallbackSrc;
-                                }}
-                              />
-                            ) : result.website_url && !['wikipedia', 'linkedin', 'crunchbase', 'glassdoor', 'indeed'].some(site => result.website_url.includes(site)) ? (
-                              <img 
-                                src={`https://logo.clearbit.com/${new URL(result.website_url).hostname}?size=72`}
-                                alt="Company logo" 
-                                style={{ 
-                                  width: '100%', 
-                                  height: '100%', 
-                                  objectFit: 'contain'
-                                }}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = 
-                                    `https://ui-avatars.com/api/?name=${formData.name.replace(/\s+/g, '+')}&background=random&color=fff&size=72`;
-                                }}
-                              />
-                            ) : (
-                              <img
-                                src={`https://ui-avatars.com/api/?name=${formData.name.replace(/\s+/g, '+')}&background=random&color=fff&size=72`}
-                                alt="Company logo"
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'contain'
-                                }}
-                              />
-                            )}
+                            <img 
+                              src={getCompanyLogo()}
+                              alt="Company logo" 
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'cover'
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`;
+                              }}
+                            />
                           </Box>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Typography variant="h5" noWrap sx={{ mb: 1, fontWeight: 600 }}>
                               {startupName}
                             </Typography>
                             {result.website_url && (
-                              <Button 
-                                href={result.website_url} 
-                                target="_blank"
-                                size="small"
-                                variant="outlined"
-                                sx={{ 
-                                  fontSize: '0.75rem',
-                                  px: 1.5,
-                                  py: 0.5,
-                                  maxWidth: '100%',
-                                  textOverflow: 'ellipsis',
-                                  overflow: 'hidden',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.2
-                                }}
-                              >
-                                Visit {new URL(result.website_url).hostname.replace('www.', '')}
-                              </Button>
+                              <Typography variant="body2" color="text.secondary" noWrap>
+                                <Link 
+                                  href={result.website_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  color="inherit"
+                                  sx={{ 
+                                    textDecoration: 'none',
+                                    '&:hover': { textDecoration: 'underline' }
+                                  }}
+                                >
+                                  {new URL(result.website_url).hostname.replace('www.', '')}
+                                </Link>
+                              </Typography>
                             )}
                           </Box>
                         </Box>
@@ -755,6 +777,73 @@ export default function AnalyzeStartup() {
           </Grid>
         </Grid>
       </Container>
+      {result && (
+        <Box sx={{ 
+          position: 'fixed', 
+          left: 16, 
+          bottom: 16,
+          zIndex: 1000,
+          width: '300px'
+        }}>
+          <Card sx={{ 
+            borderRadius: '16px', 
+            boxShadow: 'none', 
+            border: `1px solid ${theme.palette.divider}` 
+          }}>
+            <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* Company Logo */}
+              <Box sx={{ 
+                width: 60, 
+                height: 60,
+                flexShrink: 0,
+                borderRadius: '8px',
+                overflow: 'hidden',
+                border: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <img 
+                  src={getCompanyLogo()}
+                  alt="Company logo" 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover'
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff&size=120`;
+                  }}
+                />
+              </Box>
+              
+              {/* Company Info */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {startupName}
+                </Typography>
+                {result.website_url && (
+                  <Typography variant="body2" color="text.secondary" noWrap>
+                    <Link 
+                      href={result.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      color="inherit"
+                      sx={{ 
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' }
+                      }}
+                    >
+                      {new URL(result.website_url).hostname.replace('www.', '')}
+                    </Link>
+                  </Typography>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
     </Box>
   );
 }
