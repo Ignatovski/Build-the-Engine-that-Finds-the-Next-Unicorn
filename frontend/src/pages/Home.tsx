@@ -15,11 +15,13 @@ import {
   Button,
 } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
+import Business from '@mui/icons-material/Business';
 
 interface Article {
   title: string;
   description: string;
   url: string;
+  logoUrls?: string[];
   imageUrl?: string;
   source: {
     name: string;
@@ -140,10 +142,7 @@ export default function Home() {
                       : 'rgba(240,240,240,0.5)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    '&:hover img': {
-                      transform: 'scale(1.05)'
-                    }
+                    justifyContent: 'center'
                   }}
                 >
                   <img
@@ -153,50 +152,20 @@ export default function Home() {
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
-                      transition: 'transform 0.5s ease',
-                      display: article.imageUrl ? 'block' : 'none'
+                      transition: 'transform 0.5s ease'
                     }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
-                  <Box sx={{ 
-                    width: 60, 
-                    height: 60,
-                    color: theme.palette.text.secondary,
-                    display: article.imageUrl ? 'none' : 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </Box>
+                  {!article.imageUrl && (
+                    <Business sx={{ 
+                      fontSize: 60, 
+                      color: theme.palette.text.secondary,
+                      position: 'absolute'
+                    }} />
+                  )}
                 </Box>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
-                    {article.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 2 }}>
-                    {article.description}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 'auto' }}>
-                    <Chip 
-                      label={article.source.name} 
-                      size="small" 
-                      sx={{ 
-                        mr: 1,
-                        fontWeight: 500,
-                        background: theme.palette.mode === 'dark'
-                          ? 'rgba(255, 255, 255, 0.1)'
-                          : 'rgba(0, 0, 0, 0.05)'
-                      }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {article.timeAgo}
-                    </Typography>
-                  </Box>
-                </CardContent>
                 <Box sx={{ p: 2, pt: 0 }}>
                   <Button 
                     href={article.url} 
